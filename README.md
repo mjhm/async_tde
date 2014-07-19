@@ -6,7 +6,7 @@ These tests focus on a simple asynchronous situation.  The "mkdir_chdir" functio
 
 #### Instructions
 
-1. Install the latest version of Node.
+1. Install Node and coffee-script.
 2. Clone this repository locally.
 3. "cd" into the cloned repository.
 4. Install the dependencies with "npm install"
