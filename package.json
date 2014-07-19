@@ -1,0 +1,22 @@
+{
+  "name": "async_tde",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "test": "mocha --recursive --compilers coffee:coffee-script/register",
+    "debug-test": "node-debug --no-debug-brk $(which grunt)"
+  },
+  "dependencies": {
+    "coffee-script": "latest",
+    "lodash": "latest",
+    "async": "latest",
+    "q": "latest",
+    "request": "latest",
+    "chai": "latest",
+    "sinon": "latest",
+    "sinon-chai": "latest",
+    "chai-as-promised": "latest",
+    "mocha": "latest",
+    "proxyquire": "latest"
+  }
+}
