@@ -10,13 +10,6 @@ fsutil = require '../../util/fsutil.coffee'
 fs = require 'fs'
 Q = require 'q'
 
-
-## These tests focus on a simple asynchronous situation.  The "mkdir_chdir"
-## functions create a directory then cd into that directory.  The intent is to
-## use the simplest possible non-trivial illustration of the thought processes
-## need to think about asynchronous programming. In true Originate style this
-## is presented from a TDE (Test Driven Education) perspective :)
-
 describe 'fsutil -', ->
 
   beforeEach ->
