@@ -11,6 +11,7 @@
     "lodash": "latest",
     "async": "latest",
     "q": "latest",
+    "bluebird": "latest",
     "request": "latest",
     "chai": "latest",
     "sinon": "latest",

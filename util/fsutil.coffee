@@ -1,6 +1,6 @@
 
 fs = require 'fs'
-Q = require 'q'
+Promise = require 'bluebird'
 
 # All of these mkdir_chdir functions are variaions on a theme of creating
 # a directory then cd'ing into the newly created directory.
@@ -28,24 +28,21 @@ exports.mkdir_chdir4 = (dir, callback) ->
 
 # The following are equivalent formulations of mkdir_chdir using "q" promises.
 
-# Explicit Deferred object creation.
+# Explicit deferred object creation.  In practice this method of "promisifying"
+# a function is rarely used.
 exports.mkdir_chdir5 = (dir) ->
-  deferred = Q.defer()
+  resolve = reject = null
+  promise = new Promise(() -> [resolve, reject] = arguments)
   fs.mkdir dir, (err) ->
-    process.chdir dir
     if err
-      deferred.reject(err)
+      reject(err)
     else
       process.chdir dir
-      deferred.resolve()
-  deferred.promise
+      resolve()
+  promise
 
-# Two uses of the Q.nfcall shortcuts for Node style functions with callbacks.
-exports.mkdir_chdir6 = (dir) ->
-  Q.nfcall(fs.mkdir, dir).then () ->
-    process.chdir dir
-
-exports.mkdir_chdir7 = (dir) ->
-  Q.nfcall(exports.mkdir_chdir4, dir)
+# Most of the time it is easier and better to "promisify" from an existing
+# node callback style function.
+exports.mkdir_chdir6 = Promise.promisify(exports.mkdir_chdir4)
 
 

@@ -1,5 +1,6 @@
 
 
+
 chai = require 'chai'
 expect = chai.expect
 sinon = require('sinon')
@@ -8,7 +9,7 @@ chai.use(require 'chai-as-promised')
 
 fsutil = require '../../util/fsutil.coffee'
 fs = require 'fs'
-Q = require 'q'
+Promise = require 'bluebird'
 
 describe 'fsutil -', ->
 
@@ -166,25 +167,25 @@ describe 'fsutil -', ->
     # rejection handlers.
     it 'should call mkdir and then chdir via the promise', (done)->
       sinon.stub(fs, 'mkdir').callsArgAsync(1)
-      fsutil.mkdir_chdir6('/tmp/whatever')
-      .then ->
-        expect(fs.mkdir).to.be.calledBefore(process.chdir)
-        expect(process.chdir).to.be.called
-        done()
-      .fail ->
-        expect('this line will be executed').to.be.false
-        done()
+      fsutil.mkdir_chdir5('/tmp/whatever')
+        .then ->
+          expect(fs.mkdir).to.be.calledBefore(process.chdir)
+          expect(process.chdir).to.be.called
+          done()
+        .catch ->
+          expect('this line will be executed').to.be.false
+          done()
 
     it 'should fail when mkdir fails', (done)->
       sinon.stub(fs, 'mkdir').callsArgWithAsync(1, new Error('mkdir error'))
-      fsutil.mkdir_chdir6('/tmp/whatever')
-      .then ->
-        expect('this line will be executed').to.be.false
-        done()
-      .fail (err) ->
-        expect(process.chdir).not.to.be.called
-        expect(err.message).to.equal('mkdir error')
-        done()
+      fsutil.mkdir_chdir5('/tmp/whatever')
+        .then ->
+          expect('this line will be executed').to.be.false
+          done()
+        .catch (err) ->
+          expect(process.chdir).not.to.be.called
+          expect(err.message).to.equal('mkdir error')
+          done()
 
 
   describe 'mkdir_chdir promise shortcuts -', ->
@@ -205,7 +206,7 @@ describe 'fsutil -', ->
     it 'should call mkdir and then chdir via the promise', ->
       sinon.stub(fs, 'mkdir').callsArgAsync(1)
       
-      testPromise = fsutil.mkdir_chdir7('/tmp/whatever').then ->
+      testPromise = fsutil.mkdir_chdir6('/tmp/whatever').then ->
         expect(fs.mkdir).to.be.calledBefore(process.chdir)
         expect(process.chdir).to.be.called
       expect(testPromise).to.eventually.be.resolved
@@ -213,8 +214,8 @@ describe 'fsutil -', ->
     it 'should fail when mkdir fails', ->
       sinon.stub(fs, 'mkdir').callsArgWithAsync(1, new Error('mkdir error'))
 
-      testPromise = fsutil.mkdir_chdir7('/tmp/whatever')
-      testPromise.fail ->
+      testPromise = fsutil.mkdir_chdir6('/tmp/whatever')
+      testPromise.catch ->
         expect(process.chdir).not.to.be.called
       expect(testPromise).to.eventually.be.rejectedWith(Error)
 
@@ -226,12 +227,12 @@ describe 'fsutil -', ->
     # testing the before and after state of from a callback -- a promise can be
     # used to explicitly specify when a callback is triggered.
 
-    asyncBlocker = null
+    resolve = null
 
     beforeEach ->
-      asyncBlocker = Q.defer()
+      asyncBlocker = new Promise((r) -> resolve = r)
       sinon.stub fs, 'mkdir', (path, cb) ->
-        asyncBlocker.promise.then () -> cb(null)
+        asyncBlocker.then () -> cb(null)
 
     it 'should call mkdir and then chdir asynchronously (promise)', (done)->
       my_callback = () ->
@@ -240,5 +241,5 @@ describe 'fsutil -', ->
       fsutil.mkdir_chdir3('/tmp/whatever', my_callback)
       expect(fs.mkdir).to.be.calledBefore(process.chdir)
       expect(process.chdir).not.to.be.called
-      asyncBlocker.resolve()  # Resolving the promise triggers the "then" in the stub.
+      resolve()  # Resolving the promise triggers the "then" in the stub.
 
