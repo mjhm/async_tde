@@ -221,7 +221,7 @@ describe 'fsutil -', ->
 
 
 
-  describe 'BONUS: mkdir_chdir4 using promise for stubbing -', ->
+  describe 'BONUS 1: mkdir_chdir4 using promise for stubbing -', ->
 
     # If .callsArgAsync doesn't give you enough control -- for example
     # testing the before and after state of from a callback -- a promise can be
@@ -242,4 +242,59 @@ describe 'fsutil -', ->
       expect(fs.mkdir).to.be.calledBefore(process.chdir)
       expect(process.chdir).not.to.be.called
       resolve()  # Resolving the promise triggers the "then" in the stub.
+
+
+
+  describe 'BONUS 2: ConfigPromise', ->
+    it 'should set and get config', ->
+      cp = new fsutil.ConfigPromise()
+      testConfig = 'whatever'
+      expect(cp.getConfig(), 'before setting').to.be.null
+      cp.setConfig(testConfig)
+      cp.then () ->
+        expect(cp.getConfig(), 'after setting').to.equal(testConfig)
+
+
+    it 'should carry the config through chained promises', ->
+      testConfig = 'whatever'
+      cp = new fsutil.ConfigPromise()
+      finalPromise = cp.then () ->
+        expect(@getConfig(), 'in first chained promise').to.equal(testConfig)
+      .then () ->
+        expect(@getConfig(), 'in second chained promise').to.equal(testConfig)
+      finalPromise.setConfig(testConfig)
+      expect(finalPromise).to.eventually.be.resolved
+      # console.log(finalPromise)
+      # console.log(finalPromise.getBinding())
+      finalPromise
+
+
+  describe 'BONUS 3: dependency injection following reader monad pattern -', ->
+
+    fs_local = {
+      mkdir: sinon.stub().callsArgAsync(1)
+    }
+    Promise.promisifyAll(fs_local)
+
+
+    it 'should call mkdir with injected stub -- setConfig first', () ->
+
+      testPromise = fsutil.fsConfigPromise.setConfig(fs_local)
+        .then () ->
+          fsutil.mkdir_chdir7('/tmp/whatever')
+        .then () ->
+          expect(fs_local.mkdir).to.be.calledBefore(process.chdir)
+          expect(process.chdir).to.be.called
+      expect(testPromise).to.eventually.be.resolved
+
+
+    it 'should call mkdir with injected stub -- setConfig later', () ->
+      testPromise = fsutil.mkdir_chdir7('/tmp/whatever')
+        .then () ->
+          expect(fs_local.mkdir).to.be.calledBefore(process.chdir)
+          expect(process.chdir).to.be.called
+        expect(testPromise).to.eventually.be.resolved
+      testPromise.setConfig(fs_local)
+
+
 
