@@ -10,5 +10,5 @@ These tests focus on a simple asynchronous situation.  The "mkdir_chdir" functio
 2. Clone this repository locally.
 3. "cd" into the cloned repository.
 4. Install the dependencies with "npm install"
-5. Run the tests "npm test" -- (Four tests will fail. This is expected.)
+5. Run the tests "npm test" -- (Five tests will fail. This is expected.)
 6. Read the comments above the tests in "async_tde/util/fsutil_test.coffee"

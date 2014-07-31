@@ -21,7 +21,7 @@ describe 'fsutil -', ->
     process.chdir.restore?()
 
 
-  describe 'mkdir_chdir unit test -', ->
+  describe 'mkdir_chdir1 unit test -', ->
 
     # This test checks that mkdir and chdir are called.
     # This is not sufficient to test the required behavior
@@ -29,45 +29,45 @@ describe 'fsutil -', ->
     # has finished creating a directory.
     it 'should call mkdir and chdir', ->
       sinon.stub(fs, 'mkdir').callsArg(1)
-      fsutil.mkdir_chdir('/tmp/whatever')
+      fsutil.mkdir_chdir1('/tmp/whatever')
       expect(fs.mkdir).to.be.called
       expect(process.chdir).to.be.called
 
-    # This is better but still incorrect. The stub is assuming that the
+    # This is a good try but still incorrect. The stub is assuming that the
     # mkdir's callback happens synchronously.  In practice it happens
     # asynchronously sometime after "nextTick", as the next test will show.
-    it 'should call mkdir and chdir', ->
+    it 'should call mkdir and then chdir', ->
       sinon.stub(fs, 'mkdir').callsArg(1)
-      fsutil.mkdir_chdir('/tmp/whatever')
+      fsutil.mkdir_chdir1('/tmp/whatever')
       expect(fs.mkdir).to.be.calledBefore(process.chdir)
       expect(process.chdir).to.be.called
 
 
-  describe 'mkdir_chdir with real "mkdir" -', ->
+  describe 'mkdir_chdir1 with real "mkdir" -', ->
 
     # If we remove the stub and use the real "mkdir" with just a "spy",
     # the same test as above fails.  The failure message says the process.chdir
     # was never called. This is because the test exited before the callback
     # was executed.
     # A proper stub for "mkdir" needs to reflect this order of operations.
-    it 'should call mkdir and chdir', ->
+    it 'should call the real mkdir and then chdir', ->
       sinon.spy(fs, 'mkdir')
       try  # Delete directory if left over from a previous test run.
         fs.rmdirSync('/tmp/whatever')
-      fsutil.mkdir_chdir('/tmp/whatever')
+      fsutil.mkdir_chdir1('/tmp/whatever')
       expect(fs.mkdir).to.be.calledBefore(process.chdir)
       expect(process.chdir).to.be.called
 
 
-  describe 'mkdir_chdir with better async stubbing of "mkdir" -', ->
+  describe 'mkdir_chdir1 with better async stubbing of "mkdir" -', ->
 
     # This still fails but for the same reason as the real "mkdir" test --
     # This is a good thing.  It indicates that the stub and the test are
     # actually doing their job.
     it 'should call mkdir and then chdir asynchronously #1', ->
       sinon.stub(fs, 'mkdir').callsArgAsync(1)
-      fsutil.mkdir_chdir('/tmp/whatever')
-      expect(fs.mkdir).to.be.calledBefore(process.chdir)
+      fsutil.mkdir_chdir1('/tmp/whatever')
+      expect(fs.mkdir).to.be.called
       expect(process.chdir).to.be.called
 
     # Finally this is properly stubbed and the test succeeds.  There's still a
@@ -77,27 +77,51 @@ describe 'fsutil -', ->
     # However if you change "process.nextTick"
     # to a "setTimeout" for just 20 msec (as might happen in a non-Node
     # environment) the callback won't be called at all.
-    it 'should call mkdir and then chdir asynchronously #2',  ->
+    it 'should call mkdir and then chdir asynchronously #2a',  ->
       sinon.stub(fs, 'mkdir').callsArgAsync(1)
-      fsutil.mkdir_chdir('/tmp/whatever')
-      expect(fs.mkdir).to.be.calledBefore(process.chdir)
+      fsutil.mkdir_chdir1('/tmp/whatever')
+      expect(fs.mkdir).to.be.called
       process.nextTick () ->
         expect(process.chdir).to.be.called
+
+
+    it.skip 'should call mkdir and then chdir asynchronously #2b',  ->
+      sinon.spy(fs, 'mkdir')
+      try  # Delete directory if left over from a previous test run.
+        fs.rmdirSync('/tmp/whatever')
+      fsutil.mkdir_chdir1('/tmp/whatever')
+      expect(fs.mkdir).to.be.called
+      process.nextTick () ->
+        expect(process.chdir).to.be.called
+
 
     # The existence of the "done" argument tells the test to not exit early,
     # and it passes the test a function (done) to call.  The test should execute
     # this function when the test knows that it has completed.
     # This tells mocha when it is safe to exit the test and move
     # on to the next.  This test succeeds...
-    it 'should call mkdir and then chdir asynchronously #3', (done)->
+    it 'should call mkdir and then chdir asynchronously #3a', (done)->
       sinon.stub(fs, 'mkdir').callsArgAsync(1)
-      fsutil.mkdir_chdir('/tmp/whatever')
-      expect(fs.mkdir).to.be.calledBefore(process.chdir)
+      fsutil.mkdir_chdir1('/tmp/whatever')
+      expect(fs.mkdir).to.be.called
       process.nextTick () ->
         expect(process.chdir).to.be.called
         done()
 
-    # ... However there is still a subtle problem: "done" is being called from
+    # ... and it succeeds with the the stub and once again fails with the
+    # regular test.
+    it 'should call mkdir and then chdir asynchronously #3b', (done) ->
+      sinon.spy(fs, 'mkdir')
+      try  # Delete directory if left over from a previous test run.
+        fs.rmdirSync('/tmp/whatever')
+      fsutil.mkdir_chdir1('/tmp/whatever')
+      expect(fs.mkdir).to.be.called
+      process.nextTick () ->
+        expect(process.chdir).to.be.called
+        done()
+
+
+    # ... there is still a subtle problem: "done" is being called from
     # "nextTick".  It is not being triggered by the completion of "mkdir_chdir".
     # In fact this test will indeed fail if the real "mkdir" is used.
     #
@@ -117,7 +141,7 @@ describe 'fsutil -', ->
         expect(process.chdir).to.be.called
         done()
       fsutil.mkdir_chdir2('/tmp/whatever', my_callback)
-      expect(fs.mkdir).to.be.calledBefore(process.chdir)
+      expect(fs.mkdir).to.be.called
 
     # ... the code is corrected and the test passes using "mkdir_chdir3".
     it 'should call mkdir and then chdir asynchronously #5', (done)->
@@ -126,7 +150,7 @@ describe 'fsutil -', ->
         expect(process.chdir).to.be.called
         done()
       fsutil.mkdir_chdir3('/tmp/whatever', my_callback)
-      expect(fs.mkdir).to.be.calledBefore(process.chdir)
+      expect(fs.mkdir).to.be.called
 
 
   # For completeness we need to check what happens if mkdir fails. Note the
@@ -169,7 +193,7 @@ describe 'fsutil -', ->
       sinon.stub(fs, 'mkdir').callsArgAsync(1)
       fsutil.mkdir_chdir5('/tmp/whatever')
         .then ->
-          expect(fs.mkdir).to.be.calledBefore(process.chdir)
+          expect(fs.mkdir).to.be.called
           expect(process.chdir).to.be.called
           done()
         .catch ->
@@ -207,7 +231,7 @@ describe 'fsutil -', ->
       sinon.stub(fs, 'mkdir').callsArgAsync(1)
       
       testPromise = fsutil.mkdir_chdir6('/tmp/whatever').then ->
-        expect(fs.mkdir).to.be.calledBefore(process.chdir)
+        expect(fs.mkdir).to.be.called
         expect(process.chdir).to.be.called
       expect(testPromise).to.eventually.be.resolved
 
@@ -239,7 +263,7 @@ describe 'fsutil -', ->
         expect(process.chdir).to.be.called
         done()
       fsutil.mkdir_chdir3('/tmp/whatever', my_callback)
-      expect(fs.mkdir).to.be.calledBefore(process.chdir)
+      expect(fs.mkdir).to.be.called
       expect(process.chdir).not.to.be.called
       resolve()  # Resolving the promise triggers the "then" in the stub.
 
@@ -264,8 +288,6 @@ describe 'fsutil -', ->
         expect(@getConfig(), 'in second chained promise').to.equal(testConfig)
       finalPromise.setConfig(testConfig)
       expect(finalPromise).to.eventually.be.resolved
-      # console.log(finalPromise)
-      # console.log(finalPromise.getBinding())
       finalPromise
 
 
@@ -283,7 +305,7 @@ describe 'fsutil -', ->
         .then () ->
           fsutil.mkdir_chdir7('/tmp/whatever')
         .then () ->
-          expect(fs_local.mkdir).to.be.calledBefore(process.chdir)
+          expect(fs_local.mkdir).to.be.called
           expect(process.chdir).to.be.called
       expect(testPromise).to.eventually.be.resolved
 

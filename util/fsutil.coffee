@@ -5,7 +5,7 @@ Promise = require 'bluebird'
 # All of these mkdir_chdir functions are variaions on a theme of creating
 # a directory then cd'ing into the newly created directory.
 
-exports.mkdir_chdir = (dir) ->
+exports.mkdir_chdir1 = (dir) ->
   fs.mkdir dir, ->
     process.chdir dir
 
@@ -72,7 +72,6 @@ class ConfigPromise
 
 exports.ConfigPromise = ConfigPromise
 
-Promise.prototype.getBinding = () -> @_boundTo
 Promise.prototype.setConfig = (config) ->
   @_boundTo?.setConfig?(config)
   @
