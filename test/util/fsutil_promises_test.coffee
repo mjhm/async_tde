@@ -10,6 +10,32 @@ chai.use(require 'chai-as-promised')
 fsutil = require '../../util/fsutil.coffee'
 fs = require 'fs'
 Promise = require 'bluebird'
+# Promise.longStackTraces()
+
+Promise.promisifyAll(fs)
+
+describe 'testlongstacktrace', ->
+  it 'should test', (done) ->
+
+    Promise.resolve()
+    .then () ->
+      @fileReadCount = 0
+      fs.readFileAsync('/tmp/something')
+    .then (result) ->
+      @fileReadCount += 1
+      fs.readFileAsync('/tmp/something_else')
+    .then (result) ->
+      @fileReadCount += 1
+      fs.readFileAsync('/tmp/nothing')
+    .then (result) ->
+      @fileReadCount += 1
+    .catch (err) ->
+      console.log(err.stack)
+    .then () ->
+      console.log('read ' + @fileReadCount + ' files')
+      done()
+
+
 
 describe.skip 'fsutil_promises -', ->
 
